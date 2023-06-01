@@ -23,7 +23,9 @@ class RegisterView(generics.GenericAPIView):
         serializer.save()
         user_data = serializer.data
         user = User.objects.get(email=user_data['email'])
+
         token = RefreshToken.for_user(user).access_token
+
         current_site = get_current_site(request).domain
         relativeLink = reverse('email-verify')
         absurl = 'http://'+current_site+relativeLink+"?token="+str(token)
@@ -63,8 +65,14 @@ class LoginAPIView(generics.GenericAPIView):
 
 class RequestPasswordResetEmail(generics.GenericAPIView):
     serializer_class = ResetPasswordEmailRequestSerializer
-
     def post(self, request):
-        serializer = self.serializer_class(data=request.dta)
+        data = {'request': request, 'data': request.data}
+        serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
+        return Response({'success':'We have sent ypu a link to reset your password'}, status=status.HTTP_200_OK)
+
+class PasswordTokenCheckAPI(generics.GenericAPIView):
+    def get(self, request, uidb64, token):
+        pass
+
 

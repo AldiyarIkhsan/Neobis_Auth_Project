@@ -5,6 +5,9 @@ from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.contrib.sites.shortcuts import get_current_site
+from django.urls import reverse
+from .utils import Util
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length=15, min_length=8, write_only=True)
@@ -44,22 +47,19 @@ class LoginSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         email = attrs.get('email', '')
         password = attrs.get('password', '')
-
         user = auth.authenticate(email=email, password=password)
 
-        if not user.is_verified:
-            raise AuthenticationFailed('Email is not verified.')
-
         if not user:
-            raise AuthenticationFailed('Invalid credentials, try again.')
-
+            raise AuthenticationFailed('Invalid credentials, try again')
         if not user.is_active:
-            raise AuthenticationFailed('Account is disabled, contact admin.')
+            raise AuthenticationFailed('Account disabled, contact admin')
+        if not user.is_verified:
+            raise AuthenticationFailed('Email is not verified')
 
         return {
             'email': user.email,
             'username': user.username,
-            'tokens': user.tokens(),
+            'tokens': user.tokens
         }
 
         return super().validate(attrs)
@@ -71,13 +71,19 @@ class ResetPasswordEmailRequestSerializer(serializers.Serializer):
         fields = ['email']
 
     def validate(self, attrs):
-        try:
-            email = attrs.get('email', '')
-            if User.objects.filter(email=email).exists():
-                user = User.objects.get(email=email)
-                uidb64=urlsafe_base64_encode()
+        email = attrs['data'].get('email', '')
+        if User.objects.filter(email=email).exists():
+            user = User.objects.get(email=email)
+            uidb64=urlsafe_base64_encode(user.id)
+            token=PasswordResetTokenGenerator().make_token(user)
+            current_site = get_current_site(request=attrs['data'].get('request')).domain
+            relativeLink = reverse('password-reset-confirm', kwargs={'uidb64': uidb64,'token': token})
+            absurl = 'http://' + current_site + relativeLink
+            email_body = 'Hello, \n Use link below to reset your password \n' + absurl
+            data = {'email_body': email_body, 'to_email': user.email,
+                    'email_subject': 'Resset your password'}
 
-            return attrs
-        exept expression as identifier:
+            Util.send_email(data)
 
         return super().validate(attrs)
+
