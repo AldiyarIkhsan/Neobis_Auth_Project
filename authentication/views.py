@@ -26,7 +26,6 @@ import os
 class RegisterView(generics.GenericAPIView):
     serializer_class = RegisterSerializer
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
         user = request.data
         serializer = self.serializer_class(data=user)
         serializer.is_valid(raise_exception=True)
@@ -77,23 +76,29 @@ class RequestPasswordResetEmail(generics.GenericAPIView):
     serializer_class = ResetPasswordEmailRequestSerializer
 
     def post(self, request):
-
         serializer = self.serializer_class(data=request.data)
 
-        email=request.data['email']
+        email = request.data.get('email', '')
+
         if User.objects.filter(email=email).exists():
             user = User.objects.get(email=email)
-            uidb64 = urlsafe_base64_encode(user.id)
+            uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
-            current_site = get_current_site(request=request).domain
-            relativeLink = reverse('password-reset-confirm', kwargs={'uidb64': uidb64,'token': token})
-            absurl = 'http://' + current_site + relativeLink
-            email_body = 'Hello, \n Use link below to reset your password \n' + absurl
-            data = {'email_body': email_body, 'to_email': user.email,
-                    'email_subject': 'Resset your password'}
+            current_site = get_current_site(
+                request=request).domain
+            relativeLink = reverse(
+                'password-reset-confirm', kwargs={'uidb64': uidb64, 'token': token})
 
+            redirect_url = request.data.get('redirect_url', '')
+            absurl = 'http://'+current_site + relativeLink
+            email_body = 'Hello, \n Use link below to reset your password  \n' + \
+                absurl+"?redirect_url="+redirect_url
+            data = {'email_body': email_body, 'to_email': user.email,
+                    'email_subject': 'Reset your passsword'}
             Util.send_email(data)
         return Response({'success': 'We have sent you a link to reset your password'}, status=status.HTTP_200_OK)
+
+
 
 class PasswordTokenCheckAPI(generics.GenericAPIView):
     def get(self, request, uidb64, token):
@@ -113,7 +118,8 @@ class PasswordTokenCheckAPI(generics.GenericAPIView):
 
 class SetNewPasswordAPIView(generics.GenericAPIView):
     serializer_class = SetNewPasswordSerializer
+
     def patch(self, request):
-        serializer = self.serilizer_class(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         return Response({'success': True, 'message': 'Password reset success'}, status=status.HTTP_200_OK)
