@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager, PermissionsMixin)
 from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import datetime
+from django.utils.timezone import now
 
 class UserManager(BaseUserManager):
     def create_user(self, username, email, password=None):
@@ -25,8 +27,11 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    first_name = models.CharField(max_length=255, blank=True, null=True)
+    last_name = models.CharField(max_length=255, blank=True, null=True)
     username = models.CharField(max_length=255, unique=True, db_index=True)
     email = models.EmailField(max_length=255, unique=True, db_index=True)
+    date_born = models.DateField(default=now())
     is_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

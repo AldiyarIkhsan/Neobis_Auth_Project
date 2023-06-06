@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from rest_framework import generics, status, views, permissions
 from .serializers import RegisterSerializer, SetNewPasswordSerializer, ResetPasswordEmailRequestSerializer, EmailVerificationSerializer, LoginSerializer
+from authentication.serializers import SecondRegisterSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
@@ -21,6 +22,7 @@ from .utils import Util
 from django.shortcuts import redirect
 from django.http import HttpResponsePermanentRedirect
 import os
+from rest_framework.permissions import IsAuthenticated
 
 
 class RegisterView(generics.GenericAPIView):
@@ -32,18 +34,33 @@ class RegisterView(generics.GenericAPIView):
         serializer.save()
         user_data = serializer.data
         user = User.objects.get(email=user_data['email'])
-
         token = RefreshToken.for_user(user).access_token
-
         current_site = get_current_site(request).domain
         relativeLink = reverse('email-verify')
         absurl = 'http://'+current_site+relativeLink+"?token="+str(token)
         email_body = 'Hi '+user.username+' Use link below to varify your email \n' + absurl
         data = {'email_body': email_body, 'to_email': user.email,
                 'email_subject': 'Verify your email'}
-
         Util.send_email(data)
         return Response(user_data, status=status.HTTP_201_CREATED)
+
+class UpdateRegisterView(generics.GenericAPIView):
+    serializer_class = SecondRegisterSerializer
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        request_body=SecondRegisterSerializer,
+        responses={200: 'User updated successfully', 400: 'Bad Request'}
+    )
+    def put(self, request):
+        user = request.user
+        serializer = SecondRegisterSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'User updated successfully'})
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class VerifyEmail(views.APIView):
     serializer_class = EmailVerificationSerializer
