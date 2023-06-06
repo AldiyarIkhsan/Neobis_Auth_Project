@@ -5,12 +5,10 @@ from datetime import datetime
 from django.utils.timezone import now
 
 class UserManager(BaseUserManager):
-    def create_user(self, username, email, password=None):
-        if username is None:
-            raise TypeError('Users should have a username')
+    def create_user(self, email, password=None):
         if email is None:
             raise TypeError('Users should have a Email')
-        user = self.model(username=username, email=self.normalize_email(email))
+        user = self.model(email=self.normalize_email(email))
         user.set_password(password)
         user.save()
         return user
