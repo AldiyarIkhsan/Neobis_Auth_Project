@@ -159,9 +159,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-
+EMAIL_HOST_USER = 'usoul31@gmail.com'
+    # os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = 'prezbspqhbmgvvaj'
+    # os.environ.get('EMAIL_HOST_PASSWORD')
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
