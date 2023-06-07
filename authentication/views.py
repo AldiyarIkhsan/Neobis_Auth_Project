@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import generics, status, views, permissions
 from .serializers import RegisterSerializer, SetNewPasswordSerializer, ResetPasswordEmailRequestSerializer, EmailVerificationSerializer, LoginSerializer
-from authentication.serializers import SecondRegisterSerializer
+from authentication.serializers import SecondRegisterSerializer, LogoutSerializer, PasswordUpdateSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
@@ -61,6 +61,26 @@ class UpdateRegisterView(generics.GenericAPIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UpdatePasswordView(generics.GenericAPIView):
+    serializer_class = PasswordUpdateSerializer
+
+    @swagger_auto_schema(
+        request_body=PasswordUpdateSerializer,
+        responses={200: 'Password updated successfully', 400: 'Bad Request'}
+    )
+    def put(self, request):
+        user = request.user
+
+        serializer = PasswordUpdateSerializer(user, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Password updated successfully'})
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class VerifyEmail(views.APIView):
     serializer_class = EmailVerificationSerializer
@@ -140,3 +160,16 @@ class SetNewPasswordAPIView(generics.GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         return Response({'success': True, 'message': 'Password reset success'}, status=status.HTTP_200_OK)
+
+
+
+class LogoutAPIView(generics.GenericAPIView):
+    serializer_class = LogoutSerializer
+    permission_classes = (permissions.IsAuthenticated, )
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
