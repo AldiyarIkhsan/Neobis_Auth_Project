@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import generics, status, views, permissions
-from .serializers import RegisterSerializer, SetNewPasswordSerializer, ResetPasswordEmailRequestSerializer, EmailVerificationSerializer, LoginSerializer
-from authentication.serializers import SecondRegisterSerializer, LogoutSerializer, PasswordUpdateSerializer
+from .serializers import RegisterEmailSerializer, SetNewPasswordSerializer, ResetPasswordEmailRequestSerializer, EmailVerificationSerializer, LoginSerializer
+from authentication.serializers import RegisterPesronalInfoSerializer, LogoutSerializer, RegisterPasswordSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
@@ -25,8 +25,8 @@ import os
 from rest_framework.permissions import IsAuthenticated
 
 
-class RegisterView(generics.GenericAPIView):
-    serializer_class = RegisterSerializer
+class RegisterEmailView(generics.GenericAPIView):
+    serializer_class = RegisterEmailSerializer
     def post(self, request):
         user = request.data
         serializer = self.serializer_class(data=user)
@@ -44,37 +44,34 @@ class RegisterView(generics.GenericAPIView):
         Util.send_email(data)
         return Response(user_data, status=status.HTTP_201_CREATED)
 
-class UpdateRegisterView(generics.GenericAPIView):
-    serializer_class = SecondRegisterSerializer
-    permission_classes = [IsAuthenticated]
+class RegisterPesronalInfoView(generics.GenericAPIView):
+    serializer_class = RegisterPesronalInfoSerializer
 
     @swagger_auto_schema(
-        request_body=SecondRegisterSerializer,
+        request_body=RegisterPesronalInfoSerializer,
         responses={200: 'User updated successfully', 400: 'Bad Request'}
     )
     def put(self, request):
         user = request.user
-        serializer = SecondRegisterSerializer(user, data=request.data)
+        serializer = RegisterPesronalInfoSerializer(user, data=request.data)
+
         if serializer.is_valid():
             serializer.save()
-            return Response({'message': 'User updated successfully'})
+            return Response({'message': 'User registered successfully'})
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class UpdatePasswordView(generics.GenericAPIView):
-    serializer_class = PasswordUpdateSerializer
+class RegisterPasswordView(generics.GenericAPIView):
+    serializer_class = RegisterPasswordSerializer
 
     @swagger_auto_schema(
-        request_body=PasswordUpdateSerializer,
+        request_body=RegisterPasswordSerializer,
         responses={200: 'Password updated successfully', 400: 'Bad Request'}
     )
     def put(self, request):
         user = request.user
 
-        serializer = PasswordUpdateSerializer(user, data=request.data)
+        serializer = RegisterPasswordSerializer(user, data=request.data)
 
         if serializer.is_valid():
             serializer.save()
@@ -134,8 +131,6 @@ class RequestPasswordResetEmail(generics.GenericAPIView):
                     'email_subject': 'Reset your passsword'}
             Util.send_email(data)
         return Response({'success': 'We have sent you a link to reset your password'}, status=status.HTTP_200_OK)
-
-
 
 class PasswordTokenCheckAPI(generics.GenericAPIView):
     def get(self, request, uidb64, token):

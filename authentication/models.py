@@ -5,11 +5,11 @@ from datetime import datetime
 from django.utils.timezone import now
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, password=None):
+    def create_user(self, email, password=None, phone_number=None):
         if email is None:
             raise TypeError('Users should have a Email')
 
-        user = self.model(email=self.normalize_email(email))
+        user = self.model(email=self.normalize_email(email), phone_number=phone_number)
         user.set_password(password)
         user.save()
         return user
@@ -31,6 +31,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=255, unique=True, db_index=True)
     email = models.EmailField(max_length=255, unique=True, db_index=True)
     date_born = models.DateField(default=now())
+    phone_number = models.CharField(max_length=255, blank=True, null=True, unique=True)
     is_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

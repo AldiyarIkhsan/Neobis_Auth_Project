@@ -8,7 +8,7 @@ from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnico
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 
-class RegisterSerializer(serializers.ModelSerializer):
+class RegisterEmailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['email']
@@ -16,21 +16,28 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
 
-class SecondRegisterSerializer(serializers.ModelSerializer):
+class EmailVerificationSerializer(serializers.ModelSerializer):
+    token = serializers.CharField()
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'date_born', 'email']
+        fields = ['token']
+
+class RegisterPesronalInfoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'date_born', 'phone_number']
 
     def update(self, instance, validated_data):
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.last_name = validated_data.get('last_name', instance.last_name)
         instance.date_born = validated_data.get('date_born', instance.date_born)
-        instance.email = validated_data.get('email', instance.email)
+        instance.phone_number = validated_data.get('phone_number', instance.phone_number)
         instance.save()
         return instance
 
-class PasswordUpdateSerializer(serializers.ModelSerializer):
+class RegisterPasswordSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
     confirm_password = serializers.CharField(write_only=True, required=True)
 
@@ -49,13 +56,6 @@ class PasswordUpdateSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
-
-class EmailVerificationSerializer(serializers.ModelSerializer):
-    token = serializers.CharField()
-
-    class Meta:
-        model = User
-        fields = ['token']
 
 class LoginSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=255, min_length=3)
