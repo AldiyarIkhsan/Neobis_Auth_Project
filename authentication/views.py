@@ -97,7 +97,7 @@ class VerifyEmail(views.APIView):
 
             token_front = RefreshToken.for_user(user).access_token
 
-            return HttpResponseRedirect('http://localhost:3000/NewPassword' + f'/?token={token_front}')
+            return HttpResponseRedirect('http://localhost:3000/SignupForm' + f'/?token={token_front}')
 
         except jwt.ExpiredSignatureError as identifier:
             return Response({'error': 'Activation Expired'}, status=status.HTTP_400_BAD_REQUEST)
